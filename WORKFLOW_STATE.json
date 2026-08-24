@@ -1,0 +1,64 @@
+{
+  "run_id": "jannat-toys-2026-08-14",
+  "workflow_config_version": "2.7.0",
+  "authorization_mode": "standing_authorization_for_all_in_scope_workflow_actions",
+  "validation_mode": "minimal_signal_only_no_generated_media_preview",
+  "started_at": "2026-08-14T18:58:16+06:00",
+  "updated_at": "2026-08-14T18:58:16+06:00",
+  "current_phase": "videoexpress_import",
+  "current_step": 18,
+  "current_substep": "ready_to_import_structurally_completed_storyboard",
+  "current_status": "in_progress",
+  "last_verified_checkpoint": "attempt2_board_accepted_by_structural_metadata",
+  "next_safe_action": "VideoExpress: create or reopen the named 16:9 project, import exactly the 22 accepted design IDs 61816150-61816171, then generate Image-to-Video clips with the universal closed-mouth prompt and booster plan. Do not preview generated media.",
+  "user_directive_2026_08_14": "Find the failed designs and redesign only those instead of regenerating the whole storyboard",
+  "user_directive_2026_08_22": "Use standing authorization and minimal signal-only validation. Do not preview generated media, audit completed prompt persistence, run mouth QC, or generate QC repair takes.",
+  "video_stage_prompt_plan": {
+    "composition_per_scene": "NO_SPEECH_PREFIX + universal MOUTH_CLOSE_OPENING + sanitized auto-filled action text (zero NO_TRIGGER_REGEX matches) + NO_SPEECH_SUFFIX + exact terminal tail 'no mouth movement no lypsync'",
+    "style": "3d (dropdown DEFAULTS to Human - set every submission)", "lip_sync": "off", "enhancement": "off"
+  },
+  "booster_plan": {
+    "audio_seconds": 114.24, "N": 22, "normal_s": 4.0417, "boosted_s": 8.0417,
+    "K": 7, "boosted_scene_set": [1, 2, 4, 7, 11, 14, 18],
+    "rule": "running-total tracking k*(A/N), A/N=5.1927",
+    "planned_total_s": 116.917, "planned_overshoot_s": 2.677, "closure": "exact-trim last clip via playhead+cut+tail-delete to 0px diff"
+  },
+  "project_title": "Jannat and Her Toys",
+  "export_name": "Jannat and Her Toys",
+  "song_idea": "A cheerful nursery rhyme about Jannat, a happy 2-year-old girl who has lots of toys and is enjoying playing with them",
+  "music_style": "Upbeat playful children's nursery rhyme (Kids-Rhymes)",
+  "language": "English",
+  "music_name": "Jannat and Her Toys",
+  "ratio": "Landscape",
+  "aspect_ratio": "16:9",
+  "identity_lock": {
+    "name": "Jannat",
+    "gender": "girl (always a girl; never a boy)",
+    "age": "2",
+    "skin_tone": "warm light-brown",
+    "face": "round cheerful face",
+    "eye_color": "big brown eyes",
+    "hair": "black hair in two tiny pigtails with red clips",
+    "clothing": "yellow t-shirt under pink overalls, white socks",
+    "medium": "3D children's animation"
+  },
+  "no_speech": {
+    "config": "v2.4.1",
+    "prefix": "Closed-mouth scene: the character's lips stay gently closed the entire time. ",
+    "tail": " No Mouth Movement or lip-sync.",
+    "enhancement": "off",
+    "style": "3d",
+    "open_mouth_still_fail_threshold": "ceil(0.10*N)"
+  },
+  "completed_steps": [],
+  "external_side_effects": [],
+  "clonevoice": {"music_name": "Jannat and Her Toys", "audio_id": "01a00066-9211-72d7-9544-5c287d016c63", "numeric_id": 832516, "version": "V3", "language": "English", "generation_status": "completed", "duration_seconds": 114.24, "src_url": "https://cdn.clonevoice.ai/uploads/production/2026/08/14/user-8916/audios/audio-01-jannat-and-her-toys-01a00066-9211-72d7-9544-5c287d016c63.mp3", "downloaded_audio_path": "C:/Users/Jalal/AppData/Local/Temp/claude/E--claude/dc3af5b4-b375-40f9-bfa0-35f198e43956/scratchpad/jannat-and-her-toys-01a00066.mp3", "downloaded_bytes": 2178672, "abandoned_defective_uuid": "01a0005f-38ec-7359-83be-e2e602cb40a4 (806.42s runaway - never import)", "lyrics_note": "AI lyrics edited before Generate Music: chorus line 'She laughs and she claps and she joyfully sings.' replaced with 'She smiles and she claps as the happy music rings.' in both chorus blocks (closed-mouth stills protection); identity she/her/girl throughout; total 1141/1300 chars", "title_collision_warning": "an OLDER Completed track with the SAME title 'Jannat and Her Toys' exists (uuid 019ff9a1-f5f4-73f4-8a75-11afe08fa992, created a day earlier) - always disambiguate by uuid 01a0005f..., never by title alone"},
+  "artistly": {"storyboard_tool":"Nursery Rhymes","storyboard_attempt":2,"storyboard_attempt_history":[{"agent":"Nursery Rhymes","attempt":1,"status":"FAILED","symptom":"single_image","designs_returned":1,"design_ids":[61815979],"batch_abandoned":true},{"agent":"Nursery Rhymes","attempt":2,"status":"ACCEPTED","designs_returned":22,"design_ids":[61816150,61816151,61816152,61816153,61816154,61816155,61816156,61816157,61816158,61816159,61816160,61816161,61816162,61816163,61816164,61816165,61816166,61816167,61816168,61816169,61816170,61816171],"evidence":"API metadata: one created_at cluster, all private, 16:9, sequential pages 1-22, count above viable floor"}],"agent_fallback_triggered":false,"storyboard_scene_count":22,"storyboard_scene_ids_in_order":[61816150,61816151,61816152,61816153,61816154,61816155,61816156,61816157,61816158,61816159,61816160,61816161,61816162,61816163,61816164,61816165,61816166,61816167,61816168,61816169,61816170,61816171],"validation_mode":"minimal_signal_only_no_generated_media_preview"},
+  "videoexpress": {"project_name":"Jannat and Her Toys","artistly_imported_scene_ids":[],"validation_mode":"minimal_signal_only_no_generated_media_preview","accept_first_completed_take":true},
+  "error_history": [
+    {"when": "2026-08-14T20:45:00+06:00", "phase": "videoexpress_import", "symptom": "VE Artistly bridge (get_media/7) frozen at 106 items / max id 61816011 for 80+ minutes; my batch 61816150-61816171 never appeared despite designs verified alive on Artistly side (uuid search hit + CDN 200); shared account kept generating (ids reached 61818042+) yet bridge never re-synced", "root_cause": "Artistly-to-VideoExpress integration sync stalled/stuck at a snapshot taken ~2 min before my batch completed; no client-side trigger refreshes it (cache-busted API calls, panel reopen cycles all returned the same snapshot)", "recovery_action": "DEVIATION per section 0.6 spirit: upload the 22 locally-held stills (already downloaded from Artistly CDN, canonical batch 61816150-61816171) directly into the VE media library, with self-composed pre-sanitized scene action prompts replacing the Artistly auto-fill (a functional upgrade for mouth control); ordering preserved via zero-padded filenames", "outcome": "in_progress"},
+    {"when": "2026-08-14T19:40:00+06:00", "phase": "artistly_storyboard", "symptom": "open_mouth_stills: Nursery Rhymes attempt 2 produced a full 22-scene 16:9 board, but the first 4 reviewed stills ALL have wide-open toothy mouths (>3 threshold); shirt text also misspells the name (Janeth)", "root_cause": "Nursery Rhymes house style renders exuberant open-mouth joy and injects lyric-derived text on clothing; agent has no prompt field to counter it", "recovery_action": "abandoned batch 61816150-61816171; running Nursery Rhymes attempt 3 of 3 (stochastic retry), then Music Storyboard fallback whose Storyboard Style prompt CAN carry the closed-mouth clause", "outcome": "pending"},
+    {"when": "2026-08-14T19:27:00+06:00", "phase": "artistly_storyboard", "symptom": "single_image: Nursery Rhymes attempt 1 produced exactly 1 design (id 61815979, page 1, private) instead of a full storyboard; verified by 3 consecutive designs-API inspections", "root_cause": "known Nursery Rhymes agent defect (documented in WORKFLOW.json corner_case artistly_nursery_rhymes_error_or_single_image)", "recovery_action": "abandoned the 1-design batch (never import); retrying Nursery Rhymes attempt 2 of 3 with same audio + 16:9", "outcome": "pending"},
+    {"when": "2026-08-14T19:10:00+06:00", "phase": "clonevoice_music", "symptom": "completed track uuid 01a0005f length 806.42s (13.4 min) - massive outlier vs account baseline 109-163s for every other music track (verified via Audio metadata probe, readyState 4)", "root_cause": "suspected CloneVoice V3 runaway/looping generation; lyric size was normal (1141/1300 chars, 5 blocks)", "recovery_action": "regenerate once via AI-Generated flow with the same idea + closed-mouth chorus edit; defective track 01a0005f abandoned (never import); disambiguate by uuid/id since three tracks now share the title", "outcome": "pending"}
+  ]
+}
