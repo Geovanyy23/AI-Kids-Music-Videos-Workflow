@@ -1,13 +1,14 @@
 ﻿{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "config_version": "2.10.0",
+  "config_version": "2.11.0",
+  "config_changelog_v2_11_0": "Replace the zero-confirmation / standing-authorization model with one explicit run approval. After intake the agent shows the production brief plus a run summary (1 song, ~N storyboard images, N clips, 1 saved project, 1 FullHD export, all on the user's own credits) and asks the user to reply GO. GO approves every routine step of that run; the agent then works without per-step questions and reports progress in short lines. Actions outside the approved scope (deleting saved/library media, buying credits, logins/CAPTCHA, new terms, a materially larger run) still require asking. Host/tool approval prompts always take precedence. Banned-phrase lists and 'receiving this document starts the run' language are removed. The mouth-locked prompt method is unchanged.",
   "config_changelog_v2_10_0": "Make the mouth-locked prompt method a HARD RULE bound to an explicit guide artifact. PROMPT_GUIDE.md is added beside the workflow and reproduced in SYSTEM_PROMPT.md 3.1; it is the ONLY permitted source for final_videoexpress_prompt and may not be substituted, invented, or recalled from a previous run. Reusable no_speech_constants / prefix / suffix / terminal_tail objects are banned outright. Every prompt_book scene must now carry a written nine-item mouth_lock_check (guide section 8 checklist) with all items true before that scene may be submitted; a missing, incomplete, or failing check blocks Create Video. A prompt book below schema 1.1.0, containing no_speech_constants, or containing any REJECTED-reference string is void: prompts are discarded and rebuilt from the guide template while scene mappings and durations are carried over. Post-opening forbidden regex extends to animatedly/enthusiastically, and the identity block must live inside the wardrobe slot rather than as a repeated trailing paragraph.",
   "config_changelog_v2_9_0": "Replace the failed generic no-speech prefix/suffix/tail wrapper with the strict mouth-locked best-practice architecture. Every final prompt is transformed—not wrapped—into one duration-independent continuous shot: mouth-set once at the beginning, expression held perfectly unchanged, lips sealed, jaw/chin/cheeks/lower face still, physical action, emotion only through safe non-mouth channels, then environment/camera. Later smile/facial-expression/vocal cues, duplicated negative lists, hard-coded prose durations, and the obsolete 'no mouth movement no lypsync' tail are forbidden. prompt_book schema advances to 1.1.0 with machine-checkable architecture gates.",
-  "config_changelog_v2_8_3": "Make unsaved timeline duplicate cleanup explicitly pre-authorized for low-model compatibility. After mapping the extra brick by prompt-book scene ID/generated-video ID, delete only that unsaved duplicate with ctxmenu:delete, recount to exactly N, checkpoint, and continue. Never ask for deletion confirmation, never describe preserved source media as a prelude to permission, and never emit a Resume wake-up phrase.",
+  "config_changelog_v2_8_3": "Define unsaved timeline duplicate cleanup as a routine in-run editing step. After mapping the extra brick by prompt-book scene ID/generated-video ID, delete only that unsaved duplicate with ctxmenu:delete, recount to exactly N, checkpoint, and continue. (Since 2.11.0 this cleanup is covered by the user's GO run approval.)",
   "config_changelog_v2_8_2": "Remove stale hardcoded human/girl/boy storyboard checks and prohibit semantic generated-media rejection. Artistly batches are accepted from structural API metadata only: completion, multi-scene count, selected ratio, sequential page numbers, and duration viability. Design descriptions, names, prompts, thumbnails, species, gender, theme, and appearance are never inspected for QC and can never trigger retry or Music Storyboard fallback. A user-approved batch or explicit Design-ID list is authoritative and continues immediately. The agent must never ask the user to repeat an audio upload.",
-  "config_changelog_v2_8_1": "Harden the CloneVoice-to-Artistly audio handoff. The primary path now fetches the exact completed CloneVoice CDN source, validates HTTP success, byte size, MIME/signature, constructs a deterministic File, and injects it into Artistly FilePond. A Download click or guessed path is never proof. Local download is a verified fallback only, and source-transfer failures do not consume Artistly storyboard retry attempts. The intake-to-execution transition also explicitly forbids credit or saved-project confirmation questions.",
+  "config_changelog_v2_8_1": "Harden the CloneVoice-to-Artistly audio handoff. The primary path now fetches the exact completed CloneVoice CDN source, validates HTTP success, byte size, MIME/signature, constructs a deterministic File, and injects it into Artistly FilePond. A Download click or guessed path is never proof. Local download is a verified fallback only, and source-transfer failures do not consume Artistly storyboard retry attempts. (Intake-to-execution approval is defined by run_approval since 2.11.0.)",
   "config_changelog_v2_8_0": "Create prompt_book.json after the accepted Artistly storyboard and before VideoExpress generation. The prompt book stores one ordered image/design mapping, final transformed prompt, and planned 3-10 second duration per scene. VideoExpress generation now uses Create with AI > Create Video From Prompt with Image Type 3D, both prompt-enhancement toggles off, Video Only on, Advanced Mode on, and manual duration from the prompt book. Image To Video (Old Algorithm) and Video Length Booster are retired from this workflow.",
-  "config_changelog_v2_7_0": "Speed and low-model compatibility: receiving the contract starts the run; all normal workflow actions are pre-authorized; permission questions and user-delegated browser work are banned; generated images and videos are never previewed; persisted video-prompt metadata audit, storyboard montage review, open-mouth flagging, per-clip mouth-motion QC, frame sampling, and QC repair generations are removed. Validation is limited to acceptance, completion, structure, project-save persistence, and the export terminal signal. The strict no-speech prompt is still asserted once before submission.",
+  "config_changelog_v2_7_0": "Speed and low-model compatibility: user-delegated browser work is removed (approval model superseded by run_approval in 2.11.0); generated images and videos are never previewed; persisted video-prompt metadata audit, storyboard montage review, open-mouth flagging, per-clip mouth-motion QC, frame sampling, and QC repair generations are removed. Validation is limited to acceptance, completion, structure, project-save persistence, and the export terminal signal. The strict no-speech prompt is still asserted once before submission.",
   "automation": {
     "name": "CloneVoice Artistly VideoExpress Nursery Rhymes Music Video",
     "enabled": true,
@@ -15,39 +16,43 @@
     "trigger_phrase": "Generate nursery rhymes music video",
     "timezone": "Asia/Dhaka",
     "how_to_start": {
-      "RECEIVING_THIS_DOCUMENT_STARTS_THE_RUN": "This is an operating instruction set, not a document to review, summarize, critique, or wait on.",
-      "your_first_action": "Verify CloneVoice, Artistly, and VideoExpress are reachable in their existing authenticated sessions. Ask only for any missing idea or ratio; if both are known, present the brief and start.",
+      "what_this_is": "Operating procedure for a children's nursery-rhyme music-video workflow that the user runs on their own signed-in CloneVoice, Artistly, and VideoExpress accounts with their own credits. The user provides it so the agent can operate those apps for them. Nothing is published or sent to third parties.",
+      "your_first_action": "Verify (read-only) that CloneVoice, Artistly, and VideoExpress are reachable in their existing authenticated sessions. Ask only for any missing idea or ratio.",
+      "then": "Present the production brief plus the run summary and ask the user to reply GO (see run_approval). Start generating only after approval.",
       "the_inputs_are_not_missing": "Idea and ratio are collected by the intake rule; their absence is an expected starting state.",
-      "on_resume": "Load WORKFLOW_STATE.json, reconcile live application state, and continue from the smallest missing action. Never restart completed work."
+      "on_resume": "Load WORKFLOW_STATE.json, reconcile live application state, and continue from the smallest missing action. Never restart completed work. In a new conversation, show done/remaining steps and ask for GO once before any new credit-consuming action.",
+      "safety_precedence": "If a step conflicts with the agent's own safety rules or a host/tool approval prompt, those take precedence; tell the user briefly which step is affected and continue with what remains."
     },
-    "standing_authorization": {
-      "GRANTED_BY_THE_USER_AT_RUN_START": "Starting the workflow is approval for every normal action explicitly defined by it.",
-      "the_only_allowed_questions": "Missing intake fields from idea and ratio. After that, no routine permission or continuation questions.",
-      "pre_answered_YES": [
-        "navigate, click named controls, generate assets and batches",
-        "retry within the configured retry ladder",
-        "import media and edit the working timeline",
-        "remove an unsaved tail fragment, stray item, duplicate, or unusable unsaved draft",
-        "save or overwrite the named workflow project",
-        "submit the final export"
+    "run_approval": {
+      "checkpoints": "Exactly one: after intake, before the first credit-consuming action.",
+      "run_summary_shown_to_user": [
+        "1 CloneVoice song (CloneVoice credits)",
+        "1 Artistly storyboard of about N scene images; N is set by Artistly, roughly one per 4-10 s of song (Artistly credits)",
+        "N VideoExpress clips, max 5 concurrent, retries within this workflow's retry limits (VideoExpress credits)",
+        "1 new saved VideoExpress project named after the project title",
+        "1 FullHD MP4 export submitted to the render queue"
       ],
-      "banned_phrases": [
-        "May I",
-        "Shall I",
-        "Should I",
-        "Would you like me to",
-        "Do you want me to",
-        "Please confirm",
-        "Authorize",
-        "Awaiting your approval",
-        "with your permission",
-        "Ready to proceed?",
-        "Confirm and I will",
-        "Let me know if you want"
+      "approval_request_text": "Reply GO to start. After GO, I'll run through to the submitted export and only stop if something outside this plan comes up.",
+      "accepted_approvals": ["GO", "go", "yes", "start", "proceed", "do it"],
+      "shortcut": "If the user's message already contains idea, ratio, and an explicit start instruction (e.g. 'GO'), that message is the approval; show the brief and summary as a record and begin.",
+      "no_side_effects_before_approval": "Do not generate, upload, save, or export anything before approval.",
+      "covered_by_GO": [
+        "navigate and click the controls this workflow names",
+        "generate the song, storyboard, and scene clips, including retries within this workflow's retry limits",
+        "import media and edit this run's working timeline, including removing an unsaved duplicate brick, stray unsaved fragment, or misplaced audio brick",
+        "save and re-save this run's VideoExpress project",
+        "submit this run's one export"
       ],
-      "credits_are_never_a_question": "Normal generation credits or quota are expected. Mention them only if the app visibly refuses the action.",
-      "unsaved_timeline_duplicate_cleanup_is_preapproved": "A verified extra timeline brick is working-state cleanup, not deletion of generated media, source media, or a saved project. Delete only the extra brick immediately, recount to N, checkpoint, and continue without asking.",
-      "forbidden_duplicate_cleanup_question": "Never ask or paraphrase: 'Please confirm deletion of only that duplicate timeline brick in VideoExpress.'",
+      "not_covered_ask_first": [
+        "deleting a saved project, library/source media, or another project's material",
+        "buying credits, upgrading a plan, entering payment details, accepting new terms or consent screens",
+        "sign-in, passwords, CAPTCHA (the user does these)",
+        "a materially larger run than approved (second full storyboard beyond the documented fallback, many regenerations beyond the retry limits, an extra project or export)",
+        "any action this workflow does not describe"
+      ],
+      "why_one_checkpoint": "A run is 100+ browser actions over 30-60 minutes. The user has already reviewed and approved all of its steps, so per-step questions add nothing and make the run stall. Report each finished step in one short line instead. The user can say stop at any time.",
+      "unsaved_timeline_duplicate_cleanup": "A verified extra unsaved timeline brick is reversible working-state editing covered by GO. It is not deletion of generated media, source media, or a saved project. Delete only the extra brick, recount to N, checkpoint, mention it in the progress line, and continue.",
+      "credits": "Normal credit use is part of the approved run. If an app refuses for lack of credits or payment, stop and tell the user; topping up is their decision.",
       "never_delete": [
         "saved projects",
         "library or source media",
@@ -55,7 +60,7 @@
         "account settings"
       ],
       "never_delegate_browser_work_to_the_user": true,
-      "host_safety_boundary": "This authorization never bypasses approval or safety mechanisms actually surfaced by the host platform or tool runtime. Never invent a confirmation checkpoint because normal generation consumes credits or creates saved assets."
+      "host_safety_boundary": "Approval prompts shown by the host platform or tool runtime always take priority; pass them to the user as they appear."
     },
     "minimal_validation": {
       "never_preview_generated_media": true,
@@ -84,7 +89,7 @@
       ],
       "never_reverify_settled_facts": true
     },
-    "final_reminder": "Standing authorization covers every in-scope action. Never ask whether to start, proceed, retry, edit, save, or export. Act, then report briefly.",
+    "final_reminder": "The user approves the run once with GO, after seeing the brief and run summary. After that, do the in-scope steps and report each one briefly. Ask only for items not covered by GO, real blockers, or host/tool approval prompts.",
     "browser": {
       "preferred_browser": "chrome",
       "use_existing_authenticated_session": true,
@@ -343,7 +348,7 @@
         "reconcile external state before retrying",
         "retry only the smallest unverified action once",
         "continue waiting when an item is processing",
-        "request user action only for a true blocker in execution_contract.true_blocking_conditions; ordinary workflow actions and normal credit use are already authorized"
+        "request user action only for a true blocker in execution_contract.true_blocking_conditions; ordinary workflow actions and normal credit use are covered by the user's GO approval"
       ],
       "forbidden_recovery_actions": [
         "restart the workflow from step 1",
@@ -371,7 +376,7 @@
       "scene_batch_partially_completed": "Wait for remaining submitted scenes. Add no partial batch to the timeline unless the runtime checkpoint explicitly records each completed insertion position and idempotency can be guaranteed.",
       "scene_added_before_checkpoint_write": "Inspect timeline_scene_ids_in_order. If the scene already occupies the intended slot, record it and do not add it again.",
       "scene_missing_from_timeline": "Restore only the exact missing clip at its original sequential position. Do not remove or shift other video clips.",
-      "scene_duplicate_on_timeline": "Identify the extra brick by prompt-book scene ID/generated-video ID mapping, preserve the correctly ordered copy and every nonmatching neighbor, immediately delete only the verified extra unsaved brick via ctxmenu:delete without asking, recount to exactly N, checkpoint, and continue. Timeline-brick deletion does not delete generated/library media or a saved project.",
+      "scene_duplicate_on_timeline": "Identify the extra brick by prompt-book scene ID/generated-video ID mapping, preserve the correctly ordered copy and every nonmatching neighbor, delete only the verified extra unsaved brick via ctxmenu:delete (covered by GO), recount to exactly N, checkpoint, and continue. Timeline-brick deletion does not delete generated/library media or a saved project.",
       "scene_order_uncertain": "Stop timeline mutation, compare stable IDs, prompt titles, thumbnails, and neighboring scenes, then persist the resolved order before continuing.",
       "audio_imported_before_checkpoint_write": "Inspect My CloneVoice.ai Audio for the exact title. Mark it imported when present; do not import it again.",
       "audio_misplaced_or_duplicated": "Remove only misplaced or duplicate audio bricks, never video bricks. Drag one exact music item to track 2 at 00:00:00 and verify the audio-brick count is exactly one.",
@@ -1536,7 +1541,7 @@
       "never_accept_rounded_duration_labels_as_exact_endpoint_proof": true,
       "never_save_or_export_with_a_timeline_gap_or_overlap": true,
       "never_leave_duplicate_music_bricks_on_the_timeline": true,
-      "never_ask_permission_to_delete_a_verified_extra_unsaved_timeline_brick": true,
+      "verified_extra_unsaved_timeline_brick_cleanup_is_covered_by_GO": true,
       "never_emit_a_resume_wakeup_phrase_after_timeline_cleanup": true,
       "never_place_music_on_the_video_track": true,
       "never_delete_the_pre_cut_audio_segment": true,

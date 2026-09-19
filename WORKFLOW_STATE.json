@@ -1,7 +1,7 @@
 {
   "run_id": "jannat-toys-2026-08-14",
   "workflow_config_version": "2.7.0",
-  "authorization_mode": "standing_authorization_for_all_in_scope_workflow_actions",
+  "authorization_mode": "single_GO_run_approval_after_intake",
   "validation_mode": "minimal_signal_only_no_generated_media_preview",
   "started_at": "2026-08-14T18:58:16+06:00",
   "updated_at": "2026-08-14T18:58:16+06:00",
@@ -12,7 +12,7 @@
   "last_verified_checkpoint": "attempt2_board_accepted_by_structural_metadata",
   "next_safe_action": "VideoExpress: create or reopen the named 16:9 project, import exactly the 22 accepted design IDs 61816150-61816171, then generate Image-to-Video clips with the universal closed-mouth prompt and booster plan. Do not preview generated media.",
   "user_directive_2026_08_14": "Find the failed designs and redesign only those instead of regenerating the whole storyboard",
-  "user_directive_2026_08_22": "Use standing authorization and minimal signal-only validation. Do not preview generated media, audit completed prompt persistence, run mouth QC, or generate QC repair takes.",
+  "user_directive_2026_08_22": "Use the single GO run approval and minimal signal-only validation. Do not preview generated media, audit completed prompt persistence, run mouth QC, or generate QC repair takes.",
   "video_stage_prompt_plan": {
     "composition_per_scene": "NO_SPEECH_PREFIX + universal MOUTH_CLOSE_OPENING + sanitized auto-filled action text (zero NO_TRIGGER_REGEX matches) + NO_SPEECH_SUFFIX + exact terminal tail 'no mouth movement no lypsync'",
     "style": "3d (dropdown DEFAULTS to Human - set every submission)", "lip_sync": "off", "enhancement": "off"

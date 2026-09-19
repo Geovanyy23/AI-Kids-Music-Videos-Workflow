@@ -1,7 +1,7 @@
 {
   "run_id": "example-run",
   "workflow_config_version": "2.9.0",
-  "authorization_mode": "standing_authorization_for_all_in_scope_workflow_actions",
+  "authorization_mode": "single_GO_run_approval_after_intake",
   "validation_mode": "minimal_signal_only_no_generated_media_preview",
   "current_phase": "videoexpress_animation",
   "current_step": 22,

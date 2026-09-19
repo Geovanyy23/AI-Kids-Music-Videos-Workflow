@@ -1,6 +1,6 @@
 # Nursery-Rhyme Music Video Automation
 
-**CloneVoice → Artistly → VideoExpress.** An autonomous browser agent that turns **one idea + one ratio** into a finished nursery-rhyme music video and submits it to the render queue.
+**CloneVoice → Artistly → VideoExpress.** A browser agent that turns **one idea + one ratio** into a finished nursery-rhyme music video and submits it to the render queue.
 
 ---
 
@@ -15,7 +15,7 @@ You answer two questions — the song idea and Landscape or Vertical. The agent 
 5. assembles the clips, adds the music, and trims the video endpoint to match the audio exactly;
 6. saves the project and submits the FullHD MP4 export.
 
-It runs to completion without check-ins. Everything else — title, lyrics, style, language, protagonist, story arc, export name — is inferred from your idea. **Only the ratio is never guessed.**
+Before spending any credits, it shows you a short brief and a run summary and asks you to reply **GO**. That is the only approval step. After GO it runs to the submitted export on its own. Everything else — title, lyrics, style, language, protagonist, story arc, export name — is inferred from your idea. **Only the ratio is never guessed.**
 
 **Example output:** https://drive.google.com/file/d/1AqmNDlgVLYsVKFcR9QupiO40vaZy_h3j/view?usp=sharing
 
@@ -24,8 +24,8 @@ It runs to completion without check-ins. Everything else — title, lyrics, styl
 ## Requirements
 
 - **Accounts signed in** at CloneVoice.ai, Artistly.ai, and VideoExpress.ai, in the browser the agent controls. The workflow never handles credentials or API keys.
-- **Generation credits** on all three. Credit use is expected and the agent will not stop to ask about it.
-- **An agent runtime that can drive a browser** — it acts through DOM selectors and JavaScript events, never screenshot coordinates, so it works at any screen size or zoom.
+- **Paid plans with generation credits on all three apps** (CloneVoice, Artistly, VideoExpress). One run uses 1 song, about N storyboard images, and N video clips (N ≈ one scene per 4–10 s of song). You approve this once with GO. If an app runs out of credits, the agent stops and tells you.
+- **An agent runtime that can drive a browser** (for Claude: Claude Code / Claude Desktop with Claude in Chrome or the built-in browser connected; a plain chat without browser tools can't run this) — it acts through DOM selectors and JavaScript events, never screenshot coordinates, so it works at any screen size or zoom.
 - **A VideoExpress plan allowing 5 concurrent generations** (the batch size the workflow assumes).
 - The files in this folder. `SYSTEM_PROMPT.md` is the whole contract; the rest are its references and runtime state.
 
@@ -48,13 +48,14 @@ If a run does stop early, say **`Resume`** — the agent reloads `WORKFLOW_STATE
 ## Steps
 
 1. Sign in to CloneVoice.ai, Artistly.ai, and VideoExpress.ai in the agent's browser.
-2. Start the agent with the contents of [`SYSTEM_PROMPT.md`](SYSTEM_PROMPT.md) (or the trigger phrase **"Generate nursery rhymes music video"**). Receiving the prompt starts the run — it is not a document to review.
+2. Start the agent with the contents of [`SYSTEM_PROMPT.md`](SYSTEM_PROMPT.md) (or the trigger phrase **"Generate nursery rhymes music video"**). The agent reads it, checks the three apps are signed in, and asks for your inputs.
 3. Answer the two questions:
    - **Idea/prompt** — the song and story. Add as much or as little as you like: protagonist, gender, age, appearance, clothing, setting, action, mood, music style, language. Anything omitted is inferred.
    - **Ratio** — **Landscape (16:9)** or **Vertical (9:16)**.
-4. The agent presents a short production brief and then runs on its own. It reports progress but does not ask for approval to generate, import, edit the timeline, save, or export.
-5. It finishes when VideoExpress shows **"Your movie creation is currently number N in the queue."**
-6. Collect the MP4 under **My Videos** once background rendering completes.
+4. The agent presents a short production brief plus a run summary (what it will generate, save, and export) and asks you to reply **GO**. You can also say GO up front, e.g. *"A duckling learns to swim, Landscape. GO"*.
+5. After GO it runs on its own and reports progress in short lines. It only stops for something outside the approved plan (deleting saved media, buying credits, logins/CAPTCHA) or a real blocker.
+6. It finishes when VideoExpress shows **"Your movie creation is currently number N in the queue."**
+7. Collect the MP4 under **My Videos** once background rendering completes.
 
 Typical wall-clock: a few minutes for the song, a few for the storyboard, then batched clip generation. Most of the time is render queue, not interaction.
 
