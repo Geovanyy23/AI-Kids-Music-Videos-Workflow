@@ -83,7 +83,7 @@ After the user approves the run, work steadily through it:
 - Do each in-scope step yourself. Don't hand browser work back to the user. If a control doesn't respond, re-query it, use the documented native/framework events, reopen the panel, or safely reload and reconcile.
 - Report progress in short lines ("Song completed: 1:52", "Batch 2 of 4 submitted"), at least once a minute during long waits.
 - Normal credit use is part of the approved run. Bring credits up only if an app refuses an action for lack of credits or payment. Then stop and tell the user, because topping up is their decision.
-- Stop and report for: a login, expired session, or CAPTCHA; a visible app refusal; an unrecoverable error after the retry ladder; a browser session you can't control; a job that is still missing after one refresh and three inspections; genuinely unsafe ambiguity; or anything listed under "What GO does not cover".
+- Stop and report for: a login, expired session, or CAPTCHA; an agent-runtime credential error such as `401 Incorrect API key provided` (§0.7); a visible app refusal; an unrecoverable error after the retry ladder; a browser session you can't control; a job that is still missing after one refresh and three inspections; genuinely unsafe ambiguity; or anything listed under "What GO does not cover".
 - Never delete a saved project, library/source media, another project's material, or account settings.
 - Any approval prompt that the host platform or tool runtime shows always takes priority. Pass it to the user as it appears.
 
@@ -103,7 +103,7 @@ Perform only these cheap validations:
 
 Never re-verify a settled fact unless a later action could have changed it.
 
-Use the existing authenticated browser sessions. CloneVoice, Artistly, and VideoExpress are already connected; skip all API-key and account-connection setup. Never expose, copy, regenerate, or store credentials.
+Use the existing authenticated browser sessions. CloneVoice, Artistly, and VideoExpress are already connected; skip all API-key and account-connection setup. The workflow needs no API keys or tokens of any kind — every step runs in the signed-in browser (§0.2, §0.6). Never expose, copy, regenerate, or store credentials.
 
 ## Non-negotiable persistence and completion condition
 
@@ -141,13 +141,22 @@ All three apps (CloneVoice, Artistly, VideoExpress) are **jQuery + Inertia** sin
 
 Element lookup is always by **text content, `name`, stable class, or `data-ident`**, e.g. `Array.from(document.querySelectorAll('a,button,div')).find(e => /^Create Video$/i.test(e.textContent.trim()))`. Prefer `data-ident` (stable IDs) over text.
 
-### 0.2 Prefer app APIs over UI scraping for reading state (fast, deterministic, low-token)
+### 0.2 Read state from the apps' own pages (fast, deterministic, low-token)
 
-- **CloneVoice** audio records (URL, duration, status): read Inertia page data — `JSON.parse(document.getElementById('app').dataset.page).props` and walk it for the record whose `uuid` matches; fields `src` (public CDN mp3), `length` (seconds), `status`.
-- **Artistly** designs & story order: `GET /api/internal/designs?folder_id=all` → array with `id, uuid, images, status, tool_used, created_at, selection_group_id, aspect_ratio, width, height, page_number`. **`page_number` is the authoritative story order.**
-- **VideoExpress** media folders & job status: `GET /api/library/get_media/4?categoryId=<FOLDER_ID>&page=1&start=0&limit=50&orderBy=id&orderDir=desc&filter=<image|>` → `{total, results:[…]}`; each result has `id, name, title, status, duration` (ms). Discover each folder's numeric `categoryId` from the network log (they are per-account — never hardcode across users). VideoExpress export/output list: `GET /api/get_list_output`.
+**What these reads are — and are not.** The paths below are the apps' own same-origin endpoints that their web pages already call. Read them **from inside the signed-in tab** with your browser tool's JavaScript/page-evaluation action (for example `await fetch('/api/internal/designs?folder_id=all').then(r => r.json())` executed in the Artistly tab). The page's existing session cookie authenticates the request.
 
-Use these to VERIFY every gate instead of toggling panels and screenshotting. Fall back to the DOM only when an API field is unavailable.
+- They are **not** external API calls: never send them from a shell, `curl`, a server-side HTTP tool, an MCP HTTP bridge, or any network client outside the signed-in tab.
+- They need **no API key, bearer token, or `Authorization` header**. Never add one, never ask the user for one, and never read one from local files or environment variables.
+- They are **read-only**. All writes (generate, import, save, export) go through the visible UI controls in §0.1.
+- If your runtime cannot execute JavaScript inside the page, skip these reads and take the same facts from the DOM/page text of the open tab (status labels, `data-ident`, `.brick` geometry, `document.title`). This fallback is slower but fully supported.
+
+Reads:
+
+- **CloneVoice** audio records (URL, duration, status): read Inertia page data — `JSON.parse(document.getElementById('app').dataset.page).props` and walk it for the record whose `uuid` matches; fields `src` (public CDN mp3), `length` (seconds), `status`. Reload **My Audio** first if the record still shows Processing in the page data.
+- **Artistly** designs & story order: `GET /api/internal/designs?folder_id=all` → `{data:[…], meta}` with `id, uuid, images, status, tool_used, created_at, selection_group_id, aspect_ratio, width, height, page_number`. **`page_number` is the authoritative story order.** A design's scene text (for §6.A): `GET /api/internal/designs/<uuid>` → `data.positive_prompt`.
+- **VideoExpress** media folders & job status: `GET /api/library/get_media/4?categoryId=<FOLDER_ID>&page=1&start=0&limit=50&orderBy=id&orderDir=desc&filter=<image|>` → `{total, results:[…]}`; each result has `id, uuid, name, fileName, status, duration` (ms). Read each folder's numeric `categoryId` from the `data-id` attribute of its `.library-folder` tile in Media Library (they are per-account — never hardcode across users). VideoExpress export queue: `GET /user_queue`; finished outputs: `GET /api/get_list_output`.
+
+Use these to VERIFY every gate instead of toggling panels and screenshotting.
 
 ### 0.3 Stacked-dialog rule
 
@@ -162,7 +171,7 @@ The primary handoff is a validated in-browser transfer from the exact completed 
 3. Before upload, require a nonempty plausible audio payload: at least 16 KB and either an `audio/*` content type or an MP3 signature (`ID3` or MPEG frame sync). This is binary-integrity validation, not media preview; never play the audio.
 4. Create one deterministic file such as `<sanitized-title>-<uuid>.mp3` with type `audio/mpeg`. Record `src_url`, `file_name`, `byte_size`, MIME type, and `transfer_method:"direct_cdn_filepond"` in `WORKFLOW_STATE.json`.
 5. Put that verified `File` into Artistly's `input[type=file][name="filepond"]` using `DataTransfer`, then dispatch `change` with bubbling.
-6. Require FilePond to show the same deterministic filename and a completed/success state before continuing. A selected filename without upload completion is not success.
+6. Require FilePond to show the same deterministic filename and a completed/success state before continuing. A selected filename without upload completion is not success. FilePond renders and uploads only while the Artistly tab is the **foreground** tab of the browser: if its drop area has near-zero height, no `input[type=file]` exists, or the item stays at "Uploading", bring the Artistly tab to the front and re-check before injecting again.
 
 If the fetch or payload validation fails, retry the **audio transfer source** up to three times after re-reading the same CloneVoice record; do not spend Artistly storyboard-attempt retries on a missing/corrupt source file. Only if direct CDN transfer is genuinely unavailable, use CloneVoice Download as a fallback: wait for the browser download to complete, discover the actual saved path, verify the file exists and is at least 16 KB, then upload that exact file. Never invent or assume a local path, never upload a zero-byte/HTML/error file, and never delegate manual download or upload to the user.
 
@@ -174,9 +183,21 @@ If the fetch or payload validation fails, retry the **audio transfer source** up
 - **Exact trim (verified method):** set `$(ruler).slider('value', audioEndPx)` and trigger `slide`/`slidechange`/`change`; select the last video clip; trigger the Cut tool (`button:has(i.bi-scissors)` via `$(cut).trigger('click')`) to split the clip at the playhead; delete the small tail brick right of the playhead via `$(tail).trigger('ctxmenu:delete')`. Re-measure until `video_end == audio_end`.
 - **1px "gaps"** between clips that recur roughly every 5 clips are **rendering round-off of contiguous model times, not real gaps** — the export renders from model times and is gapless. A real gap is larger and non-recurring; only those need correction.
 
-### 0.6 Do not use non-browser write APIs when a browser is mandated
+### 0.6 The signed-in browser is the only path — no external API bridge
 
-If an MCP/API bridge write returns a session/CSRF error (e.g. Laravel 419 "page expired"), that is not a blocker — the authenticated browser DOM is the authoritative path for this workflow. Read-only API GETs (0.2) remain valid.
+This workflow runs entirely inside the signed-in browser tabs. Do not call the three apps through an MCP/API bridge, a shell, or any other out-of-browser client. If some other tool you happen to have returns a session/CSRF error (e.g. Laravel 419 "page expired") or an app-side 401/403, do not debug it or retry through that tool — switch to the browser tab, which is the authoritative path. In-page reads (§0.2) remain valid.
+
+### 0.7 Agent-platform errors are not app errors
+
+None of the three apps uses API keys in this workflow. An error that names a model-provider key or account — for example `unexpected status 401 Unauthorized: Incorrect API key provided: sk-…`, `invalid x-api-key`, `insufficient_quota`, or any message about an OpenAI/Anthropic/model credential — comes from **the agent's own runtime connection to its model**, not from CloneVoice, Artistly, or VideoExpress, and not from anything in this document.
+
+When that happens:
+
+1. Stop immediately; do not retry app actions, change the approach, or treat it as a workflow bug.
+2. Never print, copy, or store the key (not even the partial `sk-…` string) in chat or `WORKFLOW_STATE.json`; record only `"agent_runtime_auth_error"`.
+3. Tell the user in one or two sentences that the agent's own model credential was rejected and must be fixed in the agent's settings (for example the runtime's API-key setting or a fresh sign-in), then that saying **Resume** continues from the last checkpoint.
+
+A **genuine app sign-in problem** looks different: the app tab shows a login page, or an in-page read (§0.2) returns 401/403/419 or an HTML login page. That is the `authentication_required` blocker — ask the user to sign in to that app in the browser, then Resume.
 
 ## 1. First response: ask exactly two questions
 
@@ -394,13 +415,13 @@ Open `https://app.clonevoice.ai/music/create` in the authenticated browser.
 
 1. Select **New**.
 2. Select **AI-Generated**.
-3. Enter the inferred song idea/prompt.
+3. Enter the inferred song idea/prompt. The field is capped at **150 characters** (counter `n/150`); write it within that limit. Name the protagonist's species and gender in plain words (e.g. "a little girl named Pip", "a white bunny") and avoid words that could be read as a different species — Nursery Rhymes derives the character only from the lyrics, and a verified run turned "Pip with curly pigtails" into a piglet.
 4. Enter the inferred music style.
 5. Select the inferred language; default to English only if unclear.
 6. Check the lyric-generation terms-of-service checkbox.
 7. Click **Generate Lyrics** once.
 8. Wait for **Lyrics Preview**; do not resubmit while a matching job is active.
-9. Review the lyrics for consistency with the idea and protagonist identity.
+9. Review the lyrics for consistency with the idea and protagonist identity. The first verse must state the protagonist's species and gender in plain words (e.g. "little girl Pip"). If it does not, edit that line in the Lyric Preview text block before Generate Music — this is the only identity input Nursery Rhymes receives.
 10. Enter the inferred song name.
 11. Check the music-generation terms-of-service checkbox.
 12. Click **Generate Music** once.
@@ -510,7 +531,7 @@ The prompt book must contain **no** `no_speech_constants` object and no shared p
 
 Prompt preparation rule for every entry — the §3.1 guide is binding and is the only permitted source:
 
-1. Read the Artistly Design Prompt from the design-detail DOM or another authoritative text field; do not inspect the picture itself.
+1. Read the Artistly Design Prompt from the design-detail DOM or another authoritative text field — the fastest is the in-page read `GET /api/internal/designs/<uuid>` → `data.positive_prompt` (§0.2); do not inspect the picture itself.
 2. Preserve the character identity, physical action, environment, lighting, and camera direction.
 3. Transform the raw text—never wrap it—using the exact ordered architecture in §3: continuity → mouth-set → unchanged lower-face lock → action → safe emotion channels → environment/camera.
 4. Require the protected opening to include all of: `Single continuous`, `At the very beginning`, `small closed-lip smile`, `perfectly unchanged for the remainder of the clip`, `lips stay sealed`, and a still `jaw, chin, cheeks, and lower face`, plus the concise exclusions `no speaking, lip-sync, mouth opening, or visible teeth`.
@@ -621,10 +642,10 @@ Never generate two versions of one scene. Never use a completed job's filename o
 
 After each batch completes:
 
-1. Open **Media Library → My AI Videos** (folder `categoryId` discovered from the network log; a prior run's was `54109`).
+1. Open **Media Library → My AI Videos** (folder `categoryId` = the tile's `data-id`; per-account).
 2. Map completed jobs to scenes through `prompt_book.json`: `artistly_scene → design_id → videoexpress_image_id → generated video id`. Do not infer order from filenames or newest-first display order.
-3. Add each clip to **video track 1** (`.tracks-wrapper .track-row` index 0) in exact ascending story order via **jQuery-UI drag** (§0.1 primitive 3), not a synthetic context-menu click (which does not register). Drop each clip past the last clip's right edge; the droppable auto-appends it contiguously. Zoom out first (§0.5) so the growing timeline stays on-screen — an off-screen drop silently fails.
-4. After each drop, read back `.brick.video` `style.left`/`style.width` to confirm the new clip appended contiguously.
+3. Add each clip to **video track 1** (`.tracks-wrapper .track-row` index 0) in exact ascending story order via **jQuery-UI drag** (§0.1 primitive 3), not a synthetic context-menu click (which does not register). Drop each clip past the last clip's right edge; the droppable auto-appends it contiguously. Zoom out first (§0.5) so the growing timeline stays on-screen — an off-screen drop silently fails. After any zoom change, wait about one second for the bricks to re-layout, then drop at least 40 px past the last brick's right edge; a drop computed from stale geometry can insert the clip *before* the last brick.
+4. After each drop, read back `.brick.video` `style.left`/`style.width` to confirm the new clip appended contiguously, and confirm the **rightmost** brick is the scene just added (its `.content` background-image `src=` equals the clip's library `fileName`). If a clip landed in the wrong slot, delete only that unsaved brick (`ctxmenu:delete`), click Auto Align Clips, and drop it again.
 5. Verify each scene occupies exactly one slot.
 
 After the final batch, require:
@@ -682,7 +703,7 @@ If all scenes are already 10 seconds and the video is still short, the accepted 
 
 ### If the video is longer than the audio
 
-The planned prompt-book total is `ceil(A)`, so normal overshoot is less than one second. Set the timeline playhead to the exact audio endpoint, cut the final video clip there, and delete only the tail fragment. If measured overshoot is unexpectedly larger than the final clip, reduce `duration_seconds` across evenly distributed prompt-book scenes that remain above 3 seconds, regenerate only those mapped scenes through Create Video From Prompt, replace them in place, and then perform the final exact cut. Never trim the music or remove a storyboard scene.
+The planned prompt-book total is `ceil(A)`, but VideoExpress renders each clip about 0.042 s longer than its requested length, so the expected overshoot is `ceil(A) − A + N × 0.042` seconds (about 1.2 s for `N = 25`). This is normal. Set the timeline playhead to the exact audio endpoint, cut the final video clip there, and delete only the tail fragment. If measured overshoot is unexpectedly larger than the final clip, reduce `duration_seconds` across evenly distributed prompt-book scenes that remain above 3 seconds, regenerate only those mapped scenes through Create Video From Prompt, replace them in place, and then perform the final exact cut. Never trim the music or remove a storyboard scene.
 
 ### Final timeline audit
 
@@ -796,7 +817,7 @@ Do not claim a step was completed unless it was visibly verified. If and only if
 
 ## 17. Verified DOM & API contract (authoritative reference — selectors are text/name/class/data-ident based, never pixel positions)
 
-Numeric folder `categoryId`s and media/design `id`s are **per-account**; the values in parentheses are examples from a prior run — **discover the current ones from the network log**, never hardcode them across users.
+Numeric folder `categoryId`s and media/design `id`s are **per-account**; the values in parentheses are examples from a prior run — **read the current ones from the page** (a VideoExpress folder's id is the `data-id` attribute of its `.library-folder` tile in Media Library), never hardcode them across users. Every read in this section runs inside the signed-in tab and needs no API key (§0.2).
 
 **CloneVoice** — `https://app.clonevoice.ai/music/create`
 - Mode toggle text `New` / `Old`; lyrics toggle `AI-Generated` / `Your Lyrics`; theme textarea (placeholder "What's your song about?"); style chips (clicking `Kids-Rhymes` auto-fills a rich style string); language dropdown (default English); ToS `checkbox`; buttons `Generate Lyrics`, then on Lyric Preview `input` Music Name + ToS + `Generate Music`.

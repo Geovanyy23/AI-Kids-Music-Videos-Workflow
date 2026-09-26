@@ -1,6 +1,7 @@
 ﻿{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "config_version": "2.11.0",
+  "config_version": "2.12.0",
+  "config_changelog_v2_12_0": "Clarify that the workflow never uses API keys and add a rule for agent-runtime credential errors. In-page reads (designs, get_media, user_queue) are the apps' own same-origin endpoints fetched from inside the signed-in tab with the page's session cookie; they are never sent from a shell/MCP/HTTP client and never carry an API key or Authorization header, with a DOM fallback for runtimes that cannot run page JavaScript. New section 0.7: an error such as '401 Incorrect API key provided: sk-...' comes from the agent's own model connection, not from CloneVoice/Artistly/VideoExpress; stop, never echo the key, tell the user to fix the agent's credential, then Resume. Also folds in verified facts from the 2026-09-26 run: CloneVoice theme field 150-char cap; lyrics must name the protagonist's species and gender plainly (Nursery Rhymes turned 'Pip with curly pigtails' into a piglet); FilePond uploads only while the Artistly tab is foreground; design text via GET /api/internal/designs/<uuid> positive_prompt; VideoExpress folder ids from the .library-folder data-id; clips render ~0.042 s longer than requested so overshoot is ceil(A)-A+N*0.042; wait after zoom and drop 40 px past the last brick, then confirm the rightmost brick.",
   "config_changelog_v2_11_0": "Replace the zero-confirmation / standing-authorization model with one explicit run approval. After intake the agent shows the production brief plus a run summary (1 song, ~N storyboard images, N clips, 1 saved project, 1 FullHD export, all on the user's own credits) and asks the user to reply GO. GO approves every routine step of that run; the agent then works without per-step questions and reports progress in short lines. Actions outside the approved scope (deleting saved/library media, buying credits, logins/CAPTCHA, new terms, a materially larger run) still require asking. Host/tool approval prompts always take precedence. Banned-phrase lists and 'receiving this document starts the run' language are removed. The mouth-locked prompt method is unchanged.",
   "config_changelog_v2_10_0": "Make the mouth-locked prompt method a HARD RULE bound to an explicit guide artifact. PROMPT_GUIDE.md is added beside the workflow and reproduced in SYSTEM_PROMPT.md 3.1; it is the ONLY permitted source for final_videoexpress_prompt and may not be substituted, invented, or recalled from a previous run. Reusable no_speech_constants / prefix / suffix / terminal_tail objects are banned outright. Every prompt_book scene must now carry a written nine-item mouth_lock_check (guide section 8 checklist) with all items true before that scene may be submitted; a missing, incomplete, or failing check blocks Create Video. A prompt book below schema 1.1.0, containing no_speech_constants, or containing any REJECTED-reference string is void: prompts are discarded and rebuilt from the guide template while scene mappings and durations are carried over. Post-opening forbidden regex extends to animatedly/enthusiastically, and the identity block must live inside the wardrobe slot rather than as a repeated trailing paragraph.",
   "config_changelog_v2_9_0": "Replace the failed generic no-speech prefix/suffix/tail wrapper with the strict mouth-locked best-practice architecture. Every final prompt is transformed—not wrapped—into one duration-independent continuous shot: mouth-set once at the beginning, expression held perfectly unchanged, lips sealed, jaw/chin/cheeks/lower face still, physical action, emotion only through safe non-mouth channels, then environment/camera. Later smile/facial-expression/vocal cues, duplicated negative lists, hard-coded prose durations, and the obsolete 'no mouth movement no lypsync' tail are forbidden. prompt_book schema advances to 1.1.0 with machine-checkable architecture gates.",
@@ -123,6 +124,7 @@
       ],
       "true_blocking_conditions": [
         "authentication_required",
+        "agent_runtime_credential_error_such_as_401_incorrect_api_key_sk_prefix_fix_in_agent_settings_then_resume",
         "captcha_or_human_verification_required",
         "visible_app_refusal_for_payment_credits_or_account_access",
         "explicit_unrecoverable_application_error_after_retry_ladder_exhausted",
@@ -133,6 +135,7 @@
       ],
       "not_a_blocker": [
         "mcp_or_api_write_returns_419_page_expired_or_csrf_error_use_authenticated_browser_dom_instead",
+        "the_workflow_needs_no_api_keys_never_add_authorization_headers_or_request_keys",
         "visible_processing_percentage_or_spinner",
         "stale_toast_text_verify_via_authoritative_signal_instead",
         "normal_generation_credit_or_quota_consumption",
@@ -180,11 +183,12 @@
           "recipe": "Read the exact Completed CloneVoice record's uuid/title/src. fetch(src,{cache:'no-store'}); require response.ok; read ArrayBuffer/Blob; require byte_size >= 16384 and audio/* MIME or MP3 ID3/MPEG-frame signature; create deterministic <sanitized-title>-<uuid>.mp3 File with audio/mpeg; DataTransfer -> input.files -> dispatch change with bubbling.",
           "target_selector": "input[type=file][name=\"filepond\"]",
           "success_gate": "FilePond shows the deterministic filename and completed/success state.",
+          "foreground_requirement": "FilePond renders and uploads only while the Artistly tab is the foreground tab. If the drop area has near-zero height, no input[type=file] exists, or the item stays at Uploading, bring the Artistly tab to the front and re-check.",
           "source_retry_rule": "Re-read and fetch the same CloneVoice source up to 3 times. Source fetch/payload failures do not increment Artistly storyboard_attempt.",
           "fallback": "Only if direct transfer is unavailable: click CloneVoice Download, wait for browser download completion, discover the actual path, require file exists and size >= 16384, then upload that exact file. Never guess a path."
         }
       },
-      "state_reading_prefers_api": "Verify gates from app APIs, not by toggling panels and screenshotting. See dom_api_contract.read_apis.",
+      "state_reading_prefers_api": "Verify gates from the apps' own same-origin endpoints, not by toggling panels and screenshotting. Run every read INSIDE the signed-in tab with the browser tool's page-JavaScript action (e.g. await fetch('/api/internal/designs?folder_id=all')), authenticated by the page's existing session cookie. Never send these from a shell, curl, MCP/HTTP bridge, or any out-of-browser client; never add an API key, bearer token, or Authorization header. Reads only; all writes go through UI controls. If the runtime cannot execute page JavaScript, read the same facts from the DOM/page text. See dom_api_contract.read_apis.",
       "stacked_dialog_rule": "Triggering an action twice (native click + jQuery trigger) can open duplicate stacked modals. Act on exactly one, verify success by an authoritative signal (document.title / queue text / API record), then close leftover duplicates. Detect duplicates by counting matching inputs/buttons.",
       "timeline_geometry": {
         "rows": ".tracks-wrapper .track-row (index 0 = video track 1, 1 = audio track 2, 2 = track 3)",
@@ -728,6 +732,7 @@
       "timeline": {
         "video_source_folder": "My AI Videos",
         "video_add_method": "jquery_ui_drag_append_to_video_track_row_0",
+        "drop_after_zoom_rule": "After any zoom change wait ~1 s for re-layout, drop at least 40 px past the last brick's right edge, then confirm the RIGHTMOST brick's .content background src= equals the added clip's library fileName. If a clip landed in the wrong slot, ctxmenu:delete only that unsaved brick, click Auto Align Clips, and drop it again.",
         "video_add_method_note": "VERIFIED: synthetic right-click 'Add to Timeline' menu clicks do NOT register. Use jQuery-UI drag (execution_mechanics.interaction_primitives.jquery_ui_drag): drop each clip past the last clip's right edge; the droppable auto-appends contiguously. Zoom out first so drops stay on-screen.",
         "video_order": "ascending storyboard scene order",
         "video_delete_method": "$(brick).trigger('ctxmenu:delete')",
@@ -781,7 +786,7 @@
       "render_mode": "background_queue"
     },
     "dom_api_contract": {
-      "note": "Numeric folder categoryIds and media/design ids are PER-ACCOUNT. Example values in *_example fields are from a prior successful run; discover current values from the network log. Selectors are text/name/class/data-ident based and device-agnostic.",
+      "note": "Numeric folder categoryIds and media/design ids are PER-ACCOUNT. Example values in *_example fields are from a prior successful run; read current values from the page (VideoExpress folder id = data-id attribute of its .library-folder tile). All read_apis run inside the signed-in tab and need no API key. Selectors are text/name/class/data-ident based and device-agnostic.",
       "read_apis": {
         "clonevoice_audio_record": {
           "method": "read Inertia page data (no fetch needed)",
@@ -811,6 +816,7 @@
             "height",
             "page_number"
           ],
+          "design_text": "GET /api/internal/designs/<uuid> -> data.positive_prompt (scene text for prompt_book transformation; never inspect the image)",
           "batch_identity": "tool_used ('AI Design Agents' for Nursery Rhymes; 'Music Storyboard') AND created_at cluster within a few seconds",
           "story_order": "ascending page_number"
         },
@@ -839,6 +845,8 @@
           "Your Lyrics"
         ],
         "theme_textarea_placeholder": "What's your song about?",
+        "theme_max_chars": 150,
+        "theme_identity_rule": "Name the protagonist's species and gender in plain words and avoid words that suggest another species; Nursery Rhymes derives the character only from the lyrics (verified: 'Pip with curly pigtails' became a piglet). If the Lyric Preview's first verse lacks species and gender, edit that line before Generate Music.",
         "style_chip_example": "Kids-Rhymes (clicking it auto-fills a rich style string)",
         "language_default": "English",
         "tos_checkbox": true,
@@ -975,7 +983,7 @@
         "storyboard_count_constraint": "3N <= ceil(audio_seconds) <= 10N",
         "placement_strategy": "Assign integer durations so each cumulative end tracks k*(audio_seconds/N). Distribute floor/ceiling values across the full scene order rather than clustering long scenes.",
         "per_scene_sync_audit": "after assembly require cumulative scene endpoints to remain near k*(audio_seconds/N); repair outliers through prompt-book duration changes before saving",
-        "overshoot": "because planned total is ceil(audio_seconds), exact-trim the final sub-second tail via playhead+cut to reach 0-pixel diff"
+        "overshoot": "planned total is ceil(audio_seconds), but VideoExpress renders each clip ~0.042 s longer than requested, so expected overshoot = ceil(A) - A + N*0.042 s (about 1.2 s for N=25); exact-trim the tail via playhead+cut to reach 0-pixel diff"
       }
     },
     "validation_checkpoints": {
@@ -1077,6 +1085,7 @@
       },
       "common_incidents": {
         "mcp_write_419": "MCP/API write returned 419 page-expired/CSRF; not a blocker; used authenticated browser DOM.",
+        "agent_runtime_401_api_key": "'unexpected status 401 Unauthorized: Incorrect API key provided: sk-...' is the agent runtime's own model key being rejected; it is unrelated to the workflow, the apps, or the in-page reads. Fix the key in the agent settings, then Resume from WORKFLOW_STATE.json.",
         "stacked_dialog": "duplicate modal from double-trigger; acted once, verified via title/queue text, closed duplicate.",
         "offscreen_drop_failed": "timeline drop dropped off-screen; zoomed out then re-dragged.",
         "stale_success_toast": "toast read 'success' from a prior job; verified real result via API/title instead.",
@@ -1472,6 +1481,7 @@
       "workflow_interrupted_at_any_step": "Load WORKFLOW_STATE.json, reopen the three applications without changing data, inspect the last recorded entity or batch, reconcile UI state with external_side_effects, and continue from next_safe_action. Never restart completed phases or repeat a generation, import, timeline insertion, save, or export until its absence is verified.",
       "runtime_checkpoint_missing_after_known_progress": "Reconstruct state from exact song title, audio ID, storyboard scene IDs, generated video IDs, timeline order, project name, and export queue. Persist the reconstructed checkpoint before taking another external action.",
       "authentication_required": "Stop on the affected app without changing accounts and ask the user to sign in.",
+      "agent_runtime_auth_error": "An error naming a model-provider credential (e.g. '401 Unauthorized: Incorrect API key provided: sk-...', 'invalid x-api-key', 'insufficient_quota') comes from the agent's own runtime, not from the three apps. Stop immediately, do not retry app actions, never echo or store the key, record only 'agent_runtime_auth_error', and tell the user to fix the agent's credential and then say Resume.",
       "integration_missing": "Stop without modifying API keys. Report the exact missing integration field or unavailable import action.",
       "lyrics_generation_timeout": "Keep CloneVoice open, wait one additional soft-timeout period, and inspect for an explicit error before stopping.",
       "music_generation_timeout": "Keep My Audio open and continue polling the exact named item while Processing remains visible.",

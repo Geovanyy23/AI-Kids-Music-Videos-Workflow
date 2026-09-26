@@ -61,6 +61,10 @@ Typical wall-clock: a few minutes for the song, a few for the storyboard, then b
 
 The agent stops early only for a real blocker: login or CAPTCHA, a visible app refusal, an unrecoverable error, an uncontrollable browser, or a job that vanished and stayed missing.
 
+### Troubleshooting: `401 Unauthorized: Incorrect API key provided: sk-…`
+
+This error is **not** caused by the workflow or by CloneVoice, Artistly, or VideoExpress — none of them uses API keys here. It means the agent's own model credential (for example the OpenAI key or service account configured in Codex / your agent runtime) was rejected. Fix or replace that key in the agent's settings (or sign in again), then say **`Resume`**. The workflow's status reads (`/api/internal/designs`, `/api/library/get_media`, …) run inside the signed-in browser tab with its session cookie and never need a key.
+
 ---
 
 ## Key rules the agent enforces
@@ -79,7 +83,7 @@ The agent stops early only for a real blocker: login or CAPTCHA, a visible app r
 |---|---|
 | [`SYSTEM_PROMPT.md`](SYSTEM_PROMPT.md) | The agent's full operating contract. Start the agent with this. |
 | [`PROMPT_GUIDE.md`](PROMPT_GUIDE.md) | The binding mouth-locked prompt method — template, checklist, and a rejected example. |
-| [`WORKFLOW.json`](WORKFLOW.json) | Machine-readable config (v2.10.0) mirroring the system prompt. |
+| [`WORKFLOW.json`](WORKFLOW.json) | Machine-readable config (v2.12.0) mirroring the system prompt. |
 | [`prompt_book.json`](prompt_book.json) | Runtime template: one scene mapping, final prompt, and duration per storyboard scene. |
 | [`WORKFLOW_STATE.json`](WORKFLOW_STATE.json) | Live run checkpoint — written after every verified step, and what `Resume` reads. |
 | [`WORKFLOW_STATE.example.json`](WORKFLOW_STATE.example.json) | A filled-in checkpoint example. |
